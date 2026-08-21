@@ -1,7 +1,7 @@
 # pi-provider-melious
 
 A [pi](https://github.com/earendil-works/pi) extension that registers
-[Melius](https://api.melious.ai) as an OpenAI-compatible LLM provider.
+[Melius](https://melious.ai/) as an OpenAI-compatible LLM provider.
 
 **Repository:** <https://github.com/chartinger/pi-provider-melious>
 
