@@ -68,8 +68,8 @@ async function fetchMeliousModels(apiKey: string, signal?: AbortSignal) {
 			baseUrl: BASE_URL,
 			reasoning: m._meta?.capabilities?.reasoning ?? false,
 			input: m._meta?.capabilities?.vision
-				? (["text", "image"] as const)
-				: (["text"] as const),
+				? (["text", "image"] as ("text" | "image")[])
+				: (["text"] as ("text" | "image")[]),
 			cost: {
 				input: m._meta?.pricing?.input_cost_per_million_eur ?? 0,
 				output: m._meta?.pricing?.output_cost_per_million_eur ?? 0,
