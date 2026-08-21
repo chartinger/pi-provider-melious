@@ -28,10 +28,10 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const BASE_URL = "https://api.melious.ai/v1";
 
-/** Environment variable that can provide the Melius API key. */
+/** Environment variable that can provide the Melious API key. */
 export const MELIOUS_API_KEY_ENV = "MELIOUS_API_KEY";
 
-interface MeliusMeta {
+interface MeliousMeta {
 	type?: "chat" | "embedding" | "image";
 	display_name?: string;
 	capabilities?: { reasoning?: boolean; vision?: boolean };
@@ -44,20 +44,20 @@ interface MeliusMeta {
 	max_output_tokens?: number;
 }
 
-interface MeliusCatalogModel {
+interface MeliousCatalogModel {
 	id: string;
-	_meta?: MeliusMeta;
+	_meta?: MeliousMeta;
 }
 
-async function fetchMeliusModels(apiKey: string, signal?: AbortSignal) {
+async function fetchMeliousModels(apiKey: string, signal?: AbortSignal) {
 	const res = await fetch(`${BASE_URL}/models?include_meta=true`, {
 		headers: { Authorization: `Bearer ${apiKey}` },
 		signal,
 	});
 	if (!res.ok) {
-		throw new Error(`Melius model catalog request failed: ${res.status} ${await res.text()}`);
+		throw new Error(`Melious model catalog request failed: ${res.status} ${await res.text()}`);
 	}
-	const { data } = (await res.json()) as { data: MeliusCatalogModel[] };
+	const { data } = (await res.json()) as { data: MeliousCatalogModel[] };
 	return data
 		.filter((m) => m._meta?.type === "chat")
 		.map((m) => ({
@@ -82,7 +82,7 @@ async function fetchMeliusModels(apiKey: string, signal?: AbortSignal) {
 }
 
 // Eager-startup seed: read the key from MELIOUS_API_KEY or the stored credential
-// in auth.json (same place `/login melius` writes). Only used to populate the
+// in auth.json (same place `/login melious` writes). Only used to populate the
 // baseline catalog at startup; runtime auth still goes through pi's auth layer.
 function readStoredKey(): string | undefined {
 	if (process.env[MELIOUS_API_KEY_ENV]) return process.env[MELIOUS_API_KEY_ENV];
@@ -97,11 +97,11 @@ function readStoredKey(): string | undefined {
 
 export default async function (pi: ExtensionAPI) {
 	// Seed eagerly so models are available at startup (when a key is present).
-	let baseline: Awaited<ReturnType<typeof fetchMeliusModels>> = [];
+	let baseline: Awaited<ReturnType<typeof fetchMeliousModels>> = [];
 	const seedKey = readStoredKey();
 	if (seedKey) {
 		try {
-			baseline = await fetchMeliusModels(seedKey);
+			baseline = await fetchMeliousModels(seedKey);
 		} catch {
 			baseline = [];
 		}
@@ -126,7 +126,7 @@ export default async function (pi: ExtensionAPI) {
 						? context.credential.access
 						: context.credential?.key;
 				if (!key) return [];
-				return fetchMeliusModels(key, context.signal);
+				return fetchMeliousModels(key, context.signal);
 			},
 		}),
 	);
