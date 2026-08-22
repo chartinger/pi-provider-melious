@@ -1,7 +1,7 @@
 {
   "name": "pi-provider-melious",
-  "version": "0.1.0",
-  "description": "Pi extension that registers Melious (api.melious.ai) as an OpenAI-compatible LLM provider.",
+  "version": "0.1.1",
+  "description": "Pi extension that registers Melious (melious.ai) as an OpenAI-compatible LLM provider.",
   "type": "module",
   "keywords": [
     "pi-package",
@@ -11,6 +11,14 @@
     "openai-compatible"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chartinger/pi-provider-melious.git"
+  },
+  "homepage": "https://github.com/chartinger/pi-provider-melious",
+  "bugs": {
+    "url": "https://github.com/chartinger/pi-provider-melious/issues"
+  },
   "main": "./extensions/melious-provider.ts",
   "files": [
     "extensions",

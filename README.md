@@ -18,10 +18,22 @@ A [pi](https://github.com/earendil-works/pi) extension that registers
 
 ## Install
 
+From npm (preferred):
+
 ```bash
-pi install git:github.com/chartinger/pi-provider-melious
-# or, for a one-off test:
-pi -e ./extensions/melious-provider.ts
+pi install npm:pi-provider-melious
+```
+
+Or directly from GitHub (fallback / for testing a pinned version):
+
+```bash
+pi install git:github.com/chartinger/pi-provider-melious@v0.1.1
+```
+
+To try it without installing:
+
+```bash
+pi -e npm:pi-provider-melious
 ```
 
 Then, once per machine:
