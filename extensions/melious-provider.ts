@@ -27,6 +27,18 @@ import {
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const BASE_URL = "https://api.melious.ai/v1";
+// Melious frequently omits max_output_tokens; 8K is a useful baseline for
+// coding-agent workloads.
+const DEFAULT_MAX_TOKENS = 8192;
+// DeepSeek V4 documentation advertises a 384K (393,216) output limit, which
+// Melious also accepts for deepseek-v4.1-flash.
+const DEEPSEEK_V4_MAX_TOKENS = 393216;
+
+function defaultMaxTokens(modelId: string): number {
+	return modelId.toLowerCase().startsWith("deepseek-v4")
+		? DEEPSEEK_V4_MAX_TOKENS
+		: DEFAULT_MAX_TOKENS;
+}
 
 /** Environment variable that can provide the Melious API key. */
 export const MELIOUS_API_KEY_ENV = "MELIOUS_API_KEY";
@@ -77,7 +89,7 @@ async function fetchMeliousModels(apiKey: string, signal?: AbortSignal) {
 				cacheWrite: 0,
 			},
 			contextWindow: m._meta?.context_length ?? 128000,
-			maxTokens: m._meta?.max_output_tokens ?? 4096,
+			maxTokens: m._meta?.max_output_tokens ?? defaultMaxTokens(m.id),
 		}));
 }
 
