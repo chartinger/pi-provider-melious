@@ -1,6 +1,6 @@
 {
   "name": "pi-provider-melious",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Pi extension that registers Melious (melious.ai) as an OpenAI-compatible LLM provider.",
   "type": "module",
   "keywords": [
@@ -38,6 +38,8 @@
     "typescript": "^5.6.0"
   },
   "pi": {
-    "extensions": ["./extensions"]
+    "extensions": [
+      "./extensions"
+    ]
   }
 }
