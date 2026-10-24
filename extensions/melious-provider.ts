@@ -23,6 +23,7 @@ import {
 	createProvider,
 	envApiKeyAuth,
 	openAICompletionsApi,
+	type Model,
 } from "@earendil-works/pi-ai/compat";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
@@ -33,6 +34,20 @@ const DEFAULT_MAX_TOKENS = 8192;
 // DeepSeek V4 documentation advertises a 384K (393,216) output limit, which
 // Melious also accepts for deepseek-v4.1-flash.
 const DEEPSEEK_V4_MAX_TOKENS = 393216;
+
+function supportsReasoning(meta: MeliousMeta | undefined): boolean {
+	const legacy = meta?.capabilities?.reasoning;
+	if (typeof legacy === "boolean") return legacy;
+	// "hybrid" models can turn reasoning off through pi's thinking levels.
+	const type = meta?.reasoning_type;
+	return type === "reasoning" || type === "hybrid";
+}
+
+function supportsVision(meta: MeliousMeta | undefined): boolean {
+	const legacy = meta?.capabilities?.vision;
+	if (typeof legacy === "boolean") return legacy;
+	return meta?.input_modalities?.includes("image") ?? false;
+}
 
 function defaultMaxTokens(modelId: string): number {
 	return modelId.toLowerCase().startsWith("deepseek-v4")
@@ -47,6 +62,10 @@ interface MeliousMeta {
 	type?: "chat" | "embedding" | "image";
 	display_name?: string;
 	capabilities?: { reasoning?: boolean; vision?: boolean };
+	/** `"reasoning" | "hybrid" | "non_reasoning"`; replaces `capabilities.reasoning`. */
+	reasoning_type?: string | null;
+	/** Replaces `capabilities.vision`. */
+	input_modalities?: string[];
 	pricing?: {
 		input_cost_per_million_eur?: number;
 		output_cost_per_million_eur?: number;
@@ -61,7 +80,12 @@ interface MeliousCatalogModel {
 	_meta?: MeliousMeta;
 }
 
-async function fetchMeliousModels(apiKey: string, signal?: AbortSignal) {
+type MeliousModel = Model<"openai-completions">;
+
+async function fetchMeliousModels(
+	apiKey: string,
+	signal?: AbortSignal,
+): Promise<MeliousModel[]> {
 	const res = await fetch(`${BASE_URL}/models?include_meta=true`, {
 		headers: { Authorization: `Bearer ${apiKey}` },
 		signal,
@@ -78,8 +102,8 @@ async function fetchMeliousModels(apiKey: string, signal?: AbortSignal) {
 			api: "openai-completions",
 			provider: "melious",
 			baseUrl: BASE_URL,
-			reasoning: m._meta?.capabilities?.reasoning ?? false,
-			input: m._meta?.capabilities?.vision
+			reasoning: supportsReasoning(m._meta),
+			input: supportsVision(m._meta)
 				? (["text", "image"] as ("text" | "image")[])
 				: (["text"] as ("text" | "image")[]),
 			cost: {
@@ -89,6 +113,9 @@ async function fetchMeliousModels(apiKey: string, signal?: AbortSignal) {
 				cacheWrite: 0,
 			},
 			contextWindow: m._meta?.context_length ?? 128000,
+			// Melious rejects the `developer` role that pi sends for reasoning
+			// models; system messages must keep the `system` role.
+			compat: { supportsDeveloperRole: false },
 			maxTokens: m._meta?.max_output_tokens ?? defaultMaxTokens(m.id),
 		}));
 }
@@ -109,7 +136,7 @@ function readStoredKey(): string | undefined {
 
 export default async function (pi: ExtensionAPI) {
 	// Seed eagerly so models are available at startup (when a key is present).
-	let baseline: Awaited<ReturnType<typeof fetchMeliousModels>> = [];
+	let baseline: MeliousModel[] = [];
 	const seedKey = readStoredKey();
 	if (seedKey) {
 		try {
@@ -120,7 +147,7 @@ export default async function (pi: ExtensionAPI) {
 	}
 
 	pi.registerProvider(
-		createProvider({
+		createProvider<"openai-completions">({
 			id: "melious",
 			name: "Melious",
 			baseUrl: BASE_URL,
